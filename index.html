@@ -170,7 +170,49 @@ document.getElementById("kamera").addEventListener("change", async function () {
     mesaj.textContent = "Fotoğraf okunamadı: " + hata.message;
   }
 });
- 
+async function stokDegistir(tip) {
+  const numara = document.getElementById("numara").value.trim();
+  const miktar = Number(prompt("Kaç adet?"));
+
+  if (!numara || !Number.isInteger(miktar) || miktar <= 0) {
+    alert("Parça numarası ve geçerli adet gerekli.");
+    return;
+  }
+
+  const { data: parca, error } = await supabase
+    .from("parcalar")
+    .select("id, stok_adedi")
+    .eq("parca_numarasi", numara)
+    .single();
+
+  if (error || !parca) {
+    alert("Parça bulunamadı.");
+    return;
+  }
+
+  const yeniStok = Number(parca.stok_adedi) +
+    (tip === "giris" ? miktar : -miktar);
+
+  if (yeniStok < 0) {
+    alert("Yeterli stok yok.");
+    return;
+  }
+
+  const { error: hata } = await supabase
+    .from("parcalar")
+    .update({ stok_adedi: yeniStok })
+    .eq("id", parca.id);
+
+  if (hata) {
+    alert("Hata: " + hata.message);
+    return;
+  }
+
+  alert("Stok güncellendi: " + yeniStok);
+  await parcalariListele();
+} 
   </script>
+<button onclick="stokDegistir('giris')">➕ STOK GİRİŞ</button>
+<button onclick="stokDegistir('cikis')">➖ STOK ÇIKIŞ</button>
 </body>
 </html>
