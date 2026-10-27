@@ -15,6 +15,7 @@ button{background:#167347;color:white;border:0}
 #liste{margin-top:20px}
 .item{background:white;padding:12px;margin:8px 0;border-radius:8px}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <main>
@@ -33,6 +34,8 @@ button{background:#167347;color:white;border:0}
 </main>
 <script>
 const SUPABASE_URL = 'https://edgjgpgtmusxeztlutye.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_j6GJVaSoHtAHk-4Sly3kEw_oiy4Dl8a';
+ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); 
   let parcalar=JSON.parse(localStorage.getItem('efeParcalar')||'[]');
 function kaydet(){
 let numara=document.getElementById('numara').value.trim();
