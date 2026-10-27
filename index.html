@@ -184,7 +184,7 @@ alert("Parça aranıyor");
     .from("parcalar")
     .select("id, stok_adedi")
     .eq("parca_numarasi", numara)
-    .single();
+    .limit(1).maybeSingle();
 
   if (error || !parca) {
     alert("Parça bulunamadı.");
