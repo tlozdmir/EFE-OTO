@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EFE OTO</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef3f8;
+      padding: 20px;
+    }
+    .kutu {
+      max-width: 420px;
+      margin: 50px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+    }
+    h1 { color: #123b66; text-align: center; }
+    input, button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border-radius: 8px;
+    }
+    button {
+      background: #167347;
+      color: white;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="kutu">
+    <h1>EFE OTO</h1>
+    <h3>Personel Girişi</h3>
+    <input id="email" type="email" placeholder="E-posta">
+    <input id="sifre" type="password" placeholder="Şifre">
+    <button onclick="giris()">Giriş Yap</button>
+    <p id="mesaj"></p>
+  </div>
+
+  <script>
+    function giris() {
+      document.getElementById("mesaj").textContent =
+        "Supabase bağlantısı henüz kurulmadı.";
+    }
+  </script>
+</body>
+</html>
