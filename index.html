@@ -164,7 +164,7 @@ document.getElementById("kamera").addEventListener("change", async function () {
       document.getElementById("numara").value = numaralar[0];
       mesaj.textContent = "Numara okundu. Kontrol edip kaydedebilirsin.";
     } else {
-      mesaj.textContent = "Numara bulunamadı. Daha net fotoğraf çek.";
+      mesaj.textContent = "Fotoğrafta okunan yazı: " + metin;
     }
   } catch (hata) {
     mesaj.textContent = "Fotoğraf okunamadı: " + hata.message;
