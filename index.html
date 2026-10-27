@@ -32,7 +32,8 @@ button{background:#167347;color:white;border:0}
 <div id="liste"></div>
 </main>
 <script>
-let parcalar=JSON.parse(localStorage.getItem('efeParcalar')||'[]');
+const SUPABASE_URL = 'https://edgjgpgtmusxeztlutye.supabase.co';
+  let parcalar=JSON.parse(localStorage.getItem('efeParcalar')||'[]');
 function kaydet(){
 let numara=document.getElementById('numara').value.trim();
 let ad=document.getElementById('ad').value.trim();
