@@ -42,7 +42,17 @@
     <button onclick="giris()">Giriş Yap</button>
     <p id="mesaj"></p>
   </div>
-
+<div id="stokEkrani" class="kutu" style="display:none">
+  <h2>Parça ve Raf Kaydı</h2>
+  <input id="numara" placeholder="Parça numarası">
+  <input id="ad" placeholder="Parça adı">
+  <input id="raf" placeholder="Raf (örnek: A1)">
+  <input id="adet" type="number" min="1" value="1">
+  <button onclick="parcaKaydet()">Parçayı Kaydet</button>
+  <p id="stokMesaj"></p>
+  <h3>Kayıtlı Parçalar</h3>
+  <div id="liste"></div>
+</div>
   <script>
     const SUPABASE_URL = 'https://edgjgpgtmusxeztlutye.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_j6GJVaSoHtAHk-4Sly3kEw_oiy4Dl8a';
@@ -64,6 +74,7 @@ async function giris() {
     mesaj.textContent = "Giriş başarısız. E-posta ve şifreni kontrol et.";
   } else {
     mesaj.textContent = "Giriş başarılı! EFE OTO sistemine hoş geldiniz.";
+  document.getElementById("stokEkrani").style.display = "block";
   }
 }
 
