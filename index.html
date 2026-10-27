@@ -75,7 +75,7 @@ async function giris() {
   } else {
     mesaj.textContent = "Giriş başarılı! EFE OTO sistemine hoş geldiniz.";
   document.getElementById("stokEkrani").style.display = "block";
-  }
+ parcalariListele(); }
 }
 async function parcaKaydet() {
   const numara = document.getElementById("numara").value.trim();
@@ -111,6 +111,33 @@ async function parcaKaydet() {
   document.getElementById("raf").value = "";
   document.getElementById("adet").value = "1";
 }
+  async function parcalariListele() {
+  const liste = document.getElementById("liste");
+  liste.textContent = "Parçalar yükleniyor...";
+
+  const { data, error } = await supabaseClient
+    .from("parcalar")
+    .select("parca_numarasi,parca_adi,raf_konumu,stok_adedi")
+    .order("id", { ascending: false });
+
+  if (error) {
+    liste.textContent = "Liste alınamadı: " + error.message;
+    return;
+  }
+
+  liste.replaceChildren();
+
+  data.forEach(p => {
+    const satir = document.createElement("div");
+    satir.className = "item";
+    satir.textContent =
+      p.parca_numarasi + " | " +
+      (p.parca_adi || "") + " | Raf: " +
+      (p.raf_konumu || "-") + " | Adet: " +
+      p.stok_adedi;
+    liste.appendChild(satir);
+  });
+}  
   </script>
 </body>
 </html>
