@@ -32,7 +32,7 @@
       border: none;
     }
   </style>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
 <body>
   <div class="kutu">
     <h1>EFE OTO</h1>
@@ -44,10 +44,29 @@
   </div>
 
   <script>
-    function giris() {
-      document.getElementById("mesaj").textContent =
-        "Supabase bağlantısı henüz kurulmadı.";
-    }
+    const SUPABASE_URL = 'https://edgjgpgtmusxeztlutye.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_j6GJVaSoHtAHk-4Sly3kEw_oiy4Dl8a';
+ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); 
+    
+async function giris() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("sifre").value;
+  const mesaj = document.getElementById("mesaj");
+
+  mesaj.textContent = "Giriş kontrol ediliyor...";
+
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if (error) {
+    mesaj.textContent = "Giriş başarısız. E-posta ve şifreni kontrol et.";
+  } else {
+    mesaj.textContent = "Giriş başarılı! EFE OTO sistemine hoş geldiniz.";
+  }
+}
+
   </script>
 </body>
 </html>
