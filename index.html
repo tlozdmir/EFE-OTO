@@ -53,7 +53,9 @@
   <button onclick="parcaKaydet()">Parçayı Kaydet</button>
   <p id="stokMesaj"></p>
   <h3>Kayıtlı Parçalar</h3>
-  <div id="liste"></div>
+  
+<input id="arama" placeholder="Raf veya parça numarası ara (A1, LX2046)" oninput="parcalariListele()">
+<div id="liste"></div>
 </div>
   <script>
     const SUPABASE_URL = 'https://edgjgpgtmusxeztlutye.supabase.co';
@@ -118,7 +120,7 @@ async function parcaKaydet() {
   const liste = document.getElementById("liste");
   liste.textContent = "Parçalar yükleniyor...";
 
-  const { data, error } = await supabaseClient
+  let { data, error } = await supabaseClient
     .from("parcalar")
     .select("parca_numarasi,parca_adi,raf_konumu,stok_adedi")
     .order("id", { ascending: false });
@@ -129,7 +131,12 @@ async function parcaKaydet() {
   }
 
   liste.replaceChildren();
-
+const arama = document.getElementById("arama").value.trim().toLocaleLowerCase("tr-TR");
+data = data.filter(p =>
+  (p.parca_numarasi || "").toLocaleLowerCase("tr-TR").includes(arama) ||
+  (p.parca_adi || "").toLocaleLowerCase("tr-TR").includes(arama) ||
+  (p.raf_konumu || "").toLocaleLowerCase("tr-TR").includes(arama)
+);
   data.forEach(p => {
     const satir = document.createElement("div");
     satir.className = "item";
