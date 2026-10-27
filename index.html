@@ -179,7 +179,7 @@ async function stokDegistir(tip) {
     alert("Parça numarası ve geçerli adet gerekli.");
     return;
   }
-
+alert("Parça aranıyor");
   const { data: parca, error } = await supabase
     .from("parcalar")
     .select("id, stok_adedi")
