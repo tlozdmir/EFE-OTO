@@ -180,7 +180,7 @@ async function stokDegistir(tip) {
     return;
   }
 alert("Parça aranıyor");
-  const { data: parca, error } = await supabase
+  const { data: parca, error } = await supabaseClient
     .from("parcalar")
     .select("id, stok_adedi")
     .eq("parca_numarasi", numara)
@@ -199,7 +199,7 @@ alert("Parça aranıyor");
     return;
   }
 
-  const { error: hata } = await supabase
+  const { error: hata } = await supabaseClient
     .from("parcalar")
     .update({ stok_adedi: yeniStok })
     .eq("id", parca.id);
