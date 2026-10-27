@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EFE OTO</title>
+<style>
+body{font-family:Arial;background:#f1f5f9;margin:0;padding:20px}
+main{max-width:500px;margin:auto}
+h1{text-align:center;color:#123b66}
+.card{background:white;padding:20px;border-radius:14px;box-shadow:0 2px 8px #ddd}
+input,button{box-sizing:border-box;width:100%;padding:14px;margin:8px 0;border-radius:8px;font-size:16px}
+input{border:1px solid #bbb}
+button{background:#167347;color:white;border:0}
+#liste{margin-top:20px}
+.item{background:white;padding:12px;margin:8px 0;border-radius:8px}
+</style>
+</head>
+<body>
+<main>
+<h1>EFE OTO</h1>
+<p style="text-align:center">Akıllı Yedek Parça ve Raf Takibi</p>
+<div class="card">
+<h2>Parça Kaydet</h2>
+<input id="numara" placeholder="Parça numarası">
+<input id="ad" placeholder="Parça adı">
+<input id="raf" placeholder="Raf (örnek: A1)">
+<input id="adet" type="number" min="1" value="1">
+<button onclick="kaydet()">Parçayı Kaydet</button>
+</div>
+<h2>Kaydedilen Parçalar</h2>
+<div id="liste"></div>
+</main>
+<script>
+let parcalar=JSON.parse(localStorage.getItem('efeParcalar')||'[]');
+function kaydet(){
+let numara=document.getElementById('numara').value.trim();
+let ad=document.getElementById('ad').value.trim();
+let raf=document.getElementById('raf').value.trim();
+let adet=Number(document.getElementById('adet').value);
+if(!numara||!raf||!Number.isInteger(adet)||adet<1){alert('Numara, raf ve geçerli adet girin');return}
+parcalar.push({numara,ad,raf,adet});
+localStorage.setItem('efeParcalar',JSON.stringify(parcalar));
+goster();
+}
+function goster(){
+let liste=document.getElementById('liste');
+liste.replaceChildren();
+parcalar.forEach(p=>{
+let d=document.createElement('div');
+d.className='item';
+d.textContent=p.numara+' | '+p.ad+' | Raf: '+p.raf+' | Adet: '+p.adet;
+liste.appendChild(d);
+});
+}
+goster();
+</script>
+</body>
+</html>
