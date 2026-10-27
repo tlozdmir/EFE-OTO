@@ -158,7 +158,7 @@ document.getElementById("kamera").addEventListener("change", async function () {
   try {
     const sonuc = await Tesseract.recognize(dosya, "eng");
     const metin = sonuc.data.text.toUpperCase();
-    const numaralar = metin.match(/[A-Z0-9][A-Z0-9.\-\/]{3,}/g);
+    const numaralar = metin.match(/\b(?=[A-Z0-9./-]*\d)[A-Z0-9][A-Z0-9./-]{3,}\b/g);
 
     if (numaralar && numaralar.length) {
       document.getElementById("numara").value = numaralar[0];
