@@ -140,7 +140,30 @@ async function parcaKaydet() {
       p.stok_adedi;
     liste.appendChild(satir);
   });
-}  
+} 
+document.getElementById("kamera").addEventListener("change", async function () {
+  const dosya = this.files[0];
+  if (!dosya) return;
+
+  const mesaj = document.getElementById("stokMesaj");
+  mesaj.textContent = "Fotoğraftaki numara okunuyor...";
+
+  try {
+    const sonuc = await Tesseract.recognize(dosya, "eng");
+    const metin = sonuc.data.text.toUpperCase();
+    const numaralar = metin.match(/[A-Z0-9][A-Z0-9.\-\/]{3,}/g);
+
+    if (numaralar && numaralar.length) {
+      document.getElementById("numara").value = numaralar[0];
+      mesaj.textContent = "Numara okundu. Kontrol edip kaydedebilirsin.";
+    } else {
+      mesaj.textContent = "Numara bulunamadı. Daha net fotoğraf çek.";
+    }
+  } catch (hata) {
+    mesaj.textContent = "Fotoğraf okunamadı: " + hata.message;
+  }
+});
+ 
   </script>
 </body>
 </html>
