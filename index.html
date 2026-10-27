@@ -77,7 +77,40 @@ async function giris() {
   document.getElementById("stokEkrani").style.display = "block";
   }
 }
+async function parcaKaydet() {
+  const numara = document.getElementById("numara").value.trim();
+  const ad = document.getElementById("ad").value.trim();
+  const raf = document.getElementById("raf").value.trim().toUpperCase();
+  const adet = Number(document.getElementById("adet").value);
+  const mesaj = document.getElementById("stokMesaj");
 
+  if (!numara || !raf || !Number.isInteger(adet) || adet < 1) {
+    mesaj.textContent = "Parça numarası, raf ve geçerli adet gir.";
+    return;
+  }
+
+  mesaj.textContent = "Parça kaydediliyor...";
+
+  const { error } = await supabaseClient
+    .from("parcalar")
+    .insert({
+      parca_numarasi: numara,
+      parca_adi: ad,
+      raf_konumu: raf,
+      stok_adedi: adet
+    });
+
+  if (error) {
+    mesaj.textContent = "Kayıt hatası: " + error.message;
+    return;
+  }
+
+  mesaj.textContent = "Parça başarıyla kaydedildi!";
+  document.getElementById("numara").value = "";
+  document.getElementById("ad").value = "";
+  document.getElementById("raf").value = "";
+  document.getElementById("adet").value = "1";
+}
   </script>
 </body>
 </html>
