@@ -32,8 +32,9 @@
       border: none;
     }
   </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
 <body>
   <div class="kutu">
     <h1>EFE OTO</h1>
@@ -56,6 +57,8 @@
   
 <input id="arama" placeholder="Raf veya parça numarası ara (A1, LX2046)" oninput="parcalariListele()">
 <div id="liste"></div>
+<button onclick="stokDegistir('giris')">➕ STOK GİRİŞ</button>
+<button onclick="stokDegistir('cikis')">➖ STOK ÇIKIŞ</button>
 </div>
   <script>
     const SUPABASE_URL = 'https://edgjgpgtmusxeztlutye.supabase.co';
@@ -82,39 +85,56 @@ async function giris() {
  parcalariListele(); }
 }
 async function parcaKaydet() {
-  const numara = document.getElementById("numara").value.trim();
+  const numara = document.getElementById("numara").value.trim().toUpperCase();
   const ad = document.getElementById("ad").value.trim();
   const raf = document.getElementById("raf").value.trim().toUpperCase();
   const adet = Number(document.getElementById("adet").value);
   const mesaj = document.getElementById("stokMesaj");
-
   if (!numara || !raf || !Number.isInteger(adet) || adet < 1) {
     mesaj.textContent = "Parça numarası, raf ve geçerli adet gir.";
     return;
   }
-
-  mesaj.textContent = "Parça kaydediliyor...";
-
-  const { error } = await supabaseClient
+  mesaj.textContent = "Parça kontrol ediliyor...";
+  const { data: mevcutlar, error: aramaHatasi } = await supabaseClient
     .from("parcalar")
-    .insert({
+    .select("id,stok_adedi")
+    .eq("parca_numarasi", numara)
+    .eq("raf_konumu", raf)
+    .order("id", { ascending: true });
+  if (aramaHatasi) {
+    mesaj.textContent = "Kontrol hatası: " + aramaHatasi.message;
+    return;
+  }
+  let hata;
+  if (mevcutlar && mevcutlar.length) {
+    const mevcut = mevcutlar[0];
+    const sonuc = await supabaseClient.from("parcalar")
+      .update({ stok_adedi: Number(mevcut.stok_adedi) + adet,
+                ...(ad ? { parca_adi: ad } : {}) })
+      .eq("id", mevcut.id);
+    hata = sonuc.error;
+  } else {
+    const sonuc = await supabaseClient.from("parcalar").insert({
       parca_numarasi: numara,
       parca_adi: ad,
       raf_konumu: raf,
       stok_adedi: adet
     });
-
-  if (error) {
-    mesaj.textContent = "Kayıt hatası: " + error.message;
+    hata = sonuc.error;
+  }
+  if (hata) {
+    mesaj.textContent = "Kayıt hatası: " + hata.message;
     return;
   }
-
-  mesaj.textContent = "Parça başarıyla kaydedildi!";
+  mesaj.textContent = mevcutlar.length
+    ? "Aynı raftaki parçanın stok adedi artırıldı!"
+    : "Parça başarıyla kaydedildi!";
   document.getElementById("numara").value = "";
   document.getElementById("ad").value = "";
-  document.getElementById("raf").value = "";
   document.getElementById("adet").value = "1";
- parcalariListele(); 
+  document.getElementById("kamera").value = "";
+  // Raf seçili kalır: aynı raftaki diğer parçalar hızlıca okutulabilir.
+  await parcalariListele();
 }
   async function parcalariListele() {
   const liste = document.getElementById("liste");
@@ -171,7 +191,7 @@ document.getElementById("kamera").addEventListener("change", async function () {
   }
 });
 async function stokDegistir(tip) {
-  alert("Stok işlemi başladı");
+  
   const numara = document.getElementById("numara").value.trim();
   const miktar = Number(prompt("Kaç adet?"));
 
@@ -179,13 +199,12 @@ async function stokDegistir(tip) {
     alert("Parça numarası ve geçerli adet gerekli.");
     return;
   }
-alert("Parça aranıyor");
+
   const { data: parca, error } = await supabaseClient
     .from("parcalar")
     .select("id, stok_adedi")
     .eq("parca_numarasi", numara)
     .limit(1).maybeSingle();
-.limit(1).maybeSingle();
   if (error || !parca) {
     alert("Parça bulunamadı.");
     return;
@@ -213,7 +232,5 @@ alert("Parça aranıyor");
   await parcalariListele();
 } 
   </script>
-<button onclick="stokDegistir('giris')">➕ STOK GİRİŞ</button>
-<button onclick="stokDegistir('cikis')">➖ STOK ÇIKIŞ</button>
 </body>
 </html>
