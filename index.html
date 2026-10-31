@@ -31,6 +31,8 @@
       color: white;
       border: none;
     }
+    .stok-butonlari { display: flex; gap: 6px; margin-top: 8px; }
+    .stok-butonlari button { flex: 1; min-width: 0; width: auto; padding: 13px 3px; font-size: 12px; white-space: nowrap; }
   </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -51,7 +53,11 @@
   <input id="ad" placeholder="Parça adı">
   <input id="raf" placeholder="Raf (örnek: A1)">
   <input id="adet" type="number" min="1" value="1">
-  <button onclick="parcaKaydet()">Parçayı Kaydet</button>
+  <div class="stok-butonlari">
+    <button onclick="parcaKaydet()">KAYDET</button>
+    <button onclick="stokDegistir('giris')">+ STOK GİRİŞ</button>
+    <button onclick="stokDegistir('cikis')">− STOK ÇIKIŞ</button>
+  </div>
   <p id="stokMesaj"></p>
   <h3>Kayıtlı Parçalar</h3>
   
