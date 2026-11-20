@@ -35,6 +35,11 @@
     .toplam-kutu strong { display:block; color:#167347; font-size:36px; margin-top:6px; }
     .parca-kart { background:#f6f9fc; border:1px solid #d8e1eb; border-radius:12px; padding:14px; margin:10px 0; line-height:1.7; overflow-wrap:anywhere; }
     .parca-kart b { color:#123b66; }
+    .gizli { display:none!important; }
+    .islem { background:#edf5ff; padding:14px; border-radius:12px; margin:15px 0; }
+    .islem select { width:100%; padding:12px; margin:7px 0; }
+    .islem button { background:#123b66; }
+    .uyari { color:#9a5700; font-weight:bold; }
     .stok-butonlari { display: flex; gap: 6px; margin-top: 8px; }
     .stok-butonlari button { flex: 1; min-width: 0; width: auto; padding: 13px 3px; font-size: 12px; white-space: nowrap; }
   </style>
@@ -42,7 +47,7 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
-  <div class="kutu">
+  <div class="kutu" id="girisKutusu">
     <h1>EFE OTO</h1>
     <h3>Personel Girişi</h3>
     <input id="email" type="email" placeholder="E-posta">
@@ -64,10 +69,21 @@
   <input id="adet" type="number" min="1" value="1">
   <div class="stok-butonlari">
     <button onclick="parcaKaydet()">KAYDET</button>
-    <button onclick="stokDegistir('giris')">+ STOK GİRİŞ</button>
-    <button onclick="stokDegistir('cikis')">− STOK ÇIKIŞ</button>
   </div>
   <p id="stokMesaj"></p>
+  <div class="islem">
+    <h3>Raf Taşıma / Raf Birleştirme</h3>
+    <input id="tasimaNumara" placeholder="Taşınacak parça numarası">
+    <button onclick="raflariBul()">Parçanın Raflarını Göster</button>
+    <div id="rafBilgisi"></div>
+    <label>Kaynak raf</label><select id="kaynakRaf"></select>
+    <label>Hedef raf (sen seç)</label><input id="hedefRaf" placeholder="Örn: A3">
+    <label>Taşınacak adet</label><input id="tasimaAdet" type="number" min="1" value="1">
+    <button onclick="rafIslemi(false)">Seçilen Adedi Taşı</button>
+    <button onclick="rafIslemi(true)">Bütün Rafları Seçtiğim Rafta Birleştir</button>
+    <p id="rafMesaj"></p>
+  </div>
+  <button onclick="excelAktar()" style="background:#245e9a">Excel'e Aktar (CSV)</button>
   <h3>Parça veya Raf Ara</h3>
   
 <input id="arama" placeholder="Raf veya parça numarası ara (A1, LX2046)" oninput="parcalariListele()">
@@ -101,59 +117,87 @@ async function giris() {
  toplamStokGuncelle(); }
 }
 async function parcaKaydet() {
-  const numara = document.getElementById("numara").value.trim().toUpperCase();
-  const ad = document.getElementById("ad").value.trim();
-  const raf = document.getElementById("raf").value.trim().toUpperCase();
-  const adet = Number(document.getElementById("adet").value);
-  const mesaj = document.getElementById("stokMesaj");
+  const numara = document.getElementById('numara').value.trim().toUpperCase();
+  const ad = document.getElementById('ad').value.trim();
+  let raf = document.getElementById('raf').value.trim().toUpperCase();
+  const adet = Number(document.getElementById('adet').value);
+  const mesaj = document.getElementById('stokMesaj');
   if (!numara || !raf || !Number.isInteger(adet) || adet < 1) {
-    mesaj.textContent = "Parça numarası, raf ve geçerli adet gir.";
-    return;
+    mesaj.textContent = 'Parça numarası, raf ve geçerli adet gir.'; return;
   }
-  mesaj.textContent = "Parça kontrol ediliyor...";
-  const { data: mevcutlar, error: aramaHatasi } = await supabaseClient
-    .from("parcalar")
-    .select("id,stok_adedi")
-    .eq("parca_numarasi", numara)
-    .eq("raf_konumu", raf)
-    .order("id", { ascending: true });
-  if (aramaHatasi) {
-    mesaj.textContent = "Kontrol hatası: " + aramaHatasi.message;
-    return;
-  }
-  let hata;
-  if (mevcutlar && mevcutlar.length) {
-    const mevcut = mevcutlar[0];
-    const sonuc = await supabaseClient.from("parcalar")
-      .update({ stok_adedi: Number(mevcut.stok_adedi) + adet,
-                ...(ad ? { parca_adi: ad } : {}) })
-      .eq("id", mevcut.id);
-    hata = sonuc.error;
-  } else {
-    const sonuc = await supabaseClient.from("parcalar").insert({
-      parca_numarasi: numara,
-      parca_adi: ad,
-      raf_konumu: raf,
-      stok_adedi: adet
+  try {
+    const {data: rows, error} = await supabaseClient.from('parcalar')
+      .select('raf_konumu,stok_adedi').eq('parca_numarasi',numara);
+    if (error) throw error;
+    const diger = [...new Set((rows||[]).filter(x=>Number(x.stok_adedi)>0 && x.raf_konumu!==raf).map(x=>x.raf_konumu))];
+    if (diger.length) {
+      const sec = prompt('UYARI: Bu parça şu raflarda mevcut: '+diger.join(', ')+
+        '\n1 = Mevcut raflardan birine kaydet\n2 = Yazdığım '+raf+' rafına kaydet\nİptal = Kaydetme', '1');
+      if (sec === null) { mesaj.textContent='Kayıt iptal edildi.'; return; }
+      if (sec==='1') {
+        const secilen=prompt('Hangi mevcut rafa kaydedilsin?\n'+diger.join(', '),diger[0]);
+        if (!secilen || !diger.includes(secilen.trim().toUpperCase())) { mesaj.textContent='Geçersiz raf. Kayıt yapılmadı.';return; }
+        raf=secilen.trim().toUpperCase();
+      } else if (sec!=='2') { mesaj.textContent='Kayıt iptal edildi.';return; }
+    }
+    if (!confirm(numara+' / '+raf+' rafına '+adet+' adet eklensin mi?')) return;
+    const {data, error:rpcHata} = await supabaseClient.rpc('efe_stok_ekle',{
+      p_numara:numara,p_ad:ad,p_raf:raf,p_adet:adet
     });
-    hata = sonuc.error;
-  }
-  if (hata) {
-    mesaj.textContent = "Kayıt hatası: " + hata.message;
-    return;
-  }
-  mesaj.textContent = mevcutlar.length
-    ? "Aynı raftaki parçanın stok adedi artırıldı!"
-    : "Parça başarıyla kaydedildi!";
-  document.getElementById("numara").value = "";
-  document.getElementById("ad").value = "";
-  document.getElementById("adet").value = "1";
-  document.getElementById("kamera").value = "";
-  // Raf seçili kalır: aynı raftaki diğer parçalar hızlıca okutulabilir.
-  await toplamStokGuncelle();
-  await parcalariListele({ sonKayit: { numara, raf } });
+    if (rpcHata) throw rpcHata;
+    mesaj.textContent='Kaydedildi: '+numara+' / '+raf+' / +'+adet;
+    document.getElementById('numara').value='';
+    document.getElementById('ad').value='';
+    document.getElementById('adet').value='1';
+    document.getElementById('kamera').value='';
+    await toplamStokGuncelle(); await parcalariListele({sonKayit:{numara,raf}});
+  } catch(e) { mesaj.textContent='Kayıt yapılamadı: '+e.message+' (Önce SQL kurulumunu yapın.)'; }
 }
-   function parcaKartiOlustur(p) {
+
+async function raflariBul() {
+ const n=document.getElementById('tasimaNumara').value.trim().toUpperCase();
+ const alan=document.getElementById('rafBilgisi'), sec=document.getElementById('kaynakRaf');
+ alan.textContent='';sec.replaceChildren();
+ if(!n){alan.textContent='Parça numarası gir.';return;}
+ const {data,error}=await supabaseClient.from('parcalar').select('raf_konumu,stok_adedi').eq('parca_numarasi',n);
+ if(error){alan.textContent=error.message;return;}
+ const map=new Map();(data||[]).forEach(x=>map.set(x.raf_konumu,(map.get(x.raf_konumu)||0)+Number(x.stok_adedi||0)));
+ for(const [raf,adet] of map){
+   const o=document.createElement('option');o.value=raf;o.textContent=raf+' ('+adet+' adet)';sec.append(o);
+   const d=document.createElement('div');d.textContent=raf+' : '+adet+' adet';alan.append(d);
+ }
+ if(!map.size) alan.textContent='Parça bulunamadı.';
+}
+async function rafIslemi(birlestir) {
+ const n=document.getElementById('tasimaNumara').value.trim().toUpperCase();
+ const kaynak=document.getElementById('kaynakRaf').value;
+ const hedef=document.getElementById('hedefRaf').value.trim().toUpperCase();
+ const adet=Number(document.getElementById('tasimaAdet').value);
+ const mesaj=document.getElementById('rafMesaj');
+ if(!n||!hedef||(!birlestir&&(!kaynak||kaynak===hedef||!Number.isInteger(adet)||adet<1))){mesaj.textContent='Parça, farklı hedef raf ve geçerli adet gerekli.';return;}
+ const aciklama=birlestir ? n+' parçasının TÜM raflardaki stokları '+hedef+' rafında birleştirilsin mi? Eski kayıtlar silinmez, adetleri sıfırlanır.' : n+' parçasından '+adet+' adet '+kaynak+' rafından '+hedef+' rafına taşınsın mı?';
+ if(!confirm(aciklama))return;
+ mesaj.textContent='İşlem yapılıyor...';
+ try{
+  const {data,error}=await supabaseClient.rpc('efe_raf_islemi',{
+   p_numara:n,p_kaynak_raf:birlestir?null:kaynak,p_hedef_raf:hedef,p_adet:birlestir?null:adet,p_birlestir:birlestir
+  });
+  if(error)throw error;
+  mesaj.textContent='İşlem tamamlandı. Taşınan adet: '+data;
+  await raflariBul();await toplamStokGuncelle();await parcalariListele();
+ }catch(e){mesaj.textContent='İşlem yapılamadı: '+e.message;}
+}
+async function excelAktar(){
+ try{
+  const rows=await tumParcalariGetir();
+  const cols=['id','parca_numarasi','parca_adi','raf_konumu','stok_adedi'];
+  const csv='\uFEFF'+[cols.join(';'),...rows.map(r=>cols.map(k=>'"'+String(r[k]??'').replaceAll('"','""')+'"').join(';'))].join('\r\n');
+  const a=document.createElement('a');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.href=url;a.download='EFE_OTO_Stok_'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }catch(e){alert('Aktarma hatası: '+e.message);}
+}
+
+function parcaKartiOlustur(p) {
      const kart = document.createElement("div");
      kart.className = "parca-kart";
      const satirlar = [
@@ -256,48 +300,14 @@ document.getElementById("kamera").addEventListener("change", async function () {
     mesaj.textContent = "Fotoğraf okunamadı: " + hata.message;
   }
 });
-async function stokDegistir(tip) {
-  
-  const numara = document.getElementById("numara").value.trim();
-  const miktar = Number(prompt("Kaç adet?"));
-
-  if (!numara || !Number.isInteger(miktar) || miktar <= 0) {
-    alert("Parça numarası ve geçerli adet gerekli.");
-    return;
-  }
-
-  const { data: parca, error } = await supabaseClient
-    .from("parcalar")
-    .select("id, stok_adedi")
-    .eq("parca_numarasi", numara)
-    .limit(1).maybeSingle();
-  if (error || !parca) {
-    alert("Parça bulunamadı.");
-    return;
-  }
-
-  const yeniStok = Number(parca.stok_adedi) +
-    (tip === "giris" ? miktar : -miktar);
-
-  if (yeniStok < 0) {
-    alert("Yeterli stok yok.");
-    return;
-  }
-
-  const { error: hata } = await supabaseClient
-    .from("parcalar")
-    .update({ stok_adedi: yeniStok })
-    .eq("id", parca.id);
-
-  if (hata) {
-    alert("Hata: " + hata.message);
-    return;
-  }
-
-  alert("Stok güncellendi: " + yeniStok);
-  await toplamStokGuncelle();
-  await parcalariListele({ sonKayit: { numara: numara.toUpperCase(), raf: document.getElementById("raf").value.trim().toUpperCase() } });
-} 
+ supabaseClient.auth.getSession().then(({data})=>{
+   if(data?.session){
+     document.getElementById('girisKutusu').classList.add('gizli');
+     document.getElementById('stokEkrani').style.display='block';
+     document.getElementById('toplamKutu').style.display='block';
+     toplamStokGuncelle();
+   }
+ });
   </script>
 </body>
 </html>
